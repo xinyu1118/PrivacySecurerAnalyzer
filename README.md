@@ -7,7 +7,8 @@ PrivacyStreamsEvents is a programming framework for handling personal data acces
 
 Based on the functions used in the query, PrivacyStreamsEvents is able to **generate a privacy description about what granularity of data are accessed and when** using PrivacySecurerAnalyzer, which could be used for the app description or privacy policy. 
 
-###How to use **PrivacySecurerAnalyzer**:
+How to use **PrivacySecurerAnalyzer**:
+===
 
 1). Generate your apk file
 
