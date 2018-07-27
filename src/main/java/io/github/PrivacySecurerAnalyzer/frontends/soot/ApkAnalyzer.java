@@ -241,6 +241,7 @@ public class ApkAnalyzer extends DERGFrontend {
 	
 	private String eventType = null;
 	private String fieldName = null;
+	private String functionName = null;
 	private String comparator = null;
 	private String threshold = null; 
 	private String latitude = null;
@@ -375,6 +376,7 @@ public class ApkAnalyzer extends DERGFrontend {
 				if (js_rOp.getType().toString().equals("io.github.privacystreamsevents.core.Function")) {
 					SootMethod builtInFunction = ((StaticInvokeExpr) js_rOp).getMethod();
 					String builtInFunctionName = builtInFunction.getName();
+					functionName = builtInFunctionName;
 					System.out.printf("Built-in function is %s, ", builtInFunctionName);
 					// Print the input and output of built-in function used in PrivacyStreamsEvents API
 					switch(builtInFunctionName) {
@@ -492,6 +494,12 @@ public class ApkAnalyzer extends DERGFrontend {
 						event.add("EventType");
 						event.add(eventType);
 						argsNameValue.add(event);	
+						
+//						System.out.println("BuiltInFunction: "+functionName);
+						ArrayList<String> function = new ArrayList<>();
+						function.add("BuiltInFunction");
+						function.add(functionName);
+						argsNameValue.add(function);
 					}
 					
 					argNameValue.add(sm.getName());
@@ -590,95 +598,96 @@ public class ApkAnalyzer extends DERGFrontend {
 						System.out.println("*** The privacy description ***");
 						switch (eventType) {
 							case "AudioEvent":
-								System.out.printf("The app checks when %s is %s %sdB.", fieldName.replace("\"", ""), comparator.replace("\"", ""), threshold.replace("\"", ""));
+								System.out.printf("The app checks %s when it is %s %sdB.", fieldName.replace("\"", ""), comparator.replace("\"", ""), threshold.replace("\"", ""));
 								System.out.println();
 								break;
 								
 							case "GeolocationEvent":
 								// fieldName is a string with quotation mark, should be removed before comparing with a variable latlon
-								if (fieldName.replace("\"", "").equals("latlon")) {
+								//if (fieldName.replace("\"", "").equals("latlon")) {
+								if (functionName.equals("getLatLon")) {
 									if (placeName != null) {
-										System.out.printf("The app checks when the user is %s %s.", comparator.replace("\"", ""), placeName.replace("\"", ""));
+										System.out.printf("The app checks latlon when the user is %s %s.", comparator.replace("\"", ""), placeName.replace("\"", ""));
 										System.out.println();
 									} else {
 										if (comparator.replace("\"", "").equals("updated")) {
-											System.out.printf("The app checks when location is updated.");
+											System.out.printf("The app checks latlon when it is updated.");
 											System.out.println();
 										} else {
-											System.out.printf("The app checks when the user %s a geofence.", comparator.replace("\"", ""));
+											System.out.printf("The app checks latlon when the user %s a geofence.", comparator.replace("\"", ""));
 											System.out.println();
 										}
 									}
 								}
 								
-								if (fieldName.replace("\"", "").equals("speed")) {
-									System.out.printf("The app checks when speed is %s %sm/s.", comparator.replace("\"", ""), threshold.replace("\"", ""));
+								if (functionName.equals("calcSpeed")) {
+									System.out.printf("The app checks speed when it is %s %sm/s.", comparator.replace("\"", ""), threshold.replace("\"", ""));
 									System.out.println();
 								}
 								
-								if (fieldName.replace("\"", "").equals("city")) 
-									System.out.println("The app checks when the user enters a new city.");
+								if (functionName.equals("getCity")) 
+									System.out.println("The app checks city when it is updated.");
 								
-								if (fieldName.replace("\"", "").equals("postcode"))
-									System.out.println("The app checks when post code is updated.");
 								
-								if (fieldName.replace("\"", "").equals("direction"))
-									System.out.println("The app checks when the user makes a turn.");
+								if (functionName.equals("getPostcode")) 
+									System.out.println("The app checks post code when it is updated.");
 								
-								if (fieldName.replace("\"", "").equals("distance")) {
-									System.out.printf("The app checks when distance to destination is %s %sm.", comparator.replace("\"", ""), threshold.replace("\"", ""));
+								if (functionName.equals("getDirection")) 
+									System.out.println("The app checks direction when the user makes a turn.");
+								
+								if (functionName.equals("distanceTo")) {
+									System.out.printf("The app checks distance when it is %s %sm.", comparator.replace("\"", ""), threshold.replace("\"", ""));
 									System.out.println();
 								}
 								break;
 								
 							case "ContactEvent":
-								if (fieldName.replace("\"", "").equals("caller")) {
+								if (functionName.equals("callerIdentification")) {
 									if (comparator.replace("\"", "").equals("from"))
-										System.out.println("The app checks when caller is from a certain phone number.");
-									else
-										System.out.println("The app checks when caller is in a list.");
-								}
+										System.out.println("The app checks caller when it is from a certain phone number.");
+									else {
+										if (comparator.replace("\"", "").equals("in")) 
+											System.out.println("The app checks caller when it is in a list.");
+										else 
+											System.out.println("The app checks new calls arriving.");
+									}
+								}	
 								
-								if (fieldName.replace("\"", "").equals("calls"))
-									System.out.println("The app checks when new calls arrive.");
+								if (functionName.equals("getContactEmails")) 
+									System.out.println("The app checks emails when they are in a list.");
 								
-								if (fieldName.replace("\"", "").equals("emails"))
-									System.out.println("The app checks when the contacts' emails are in a list.");
+								if (functionName.equals("getContactLists")) 
+									System.out.println("The app checks contact lists when they are updated.");
 								
-								if (fieldName.replace("\"", "").equals("contacts"))
-									System.out.println("The app checks when contact lists are updated.");
-								
-								if (fieldName.replace("\"", "").equals("logs"))
-									System.out.println("The app checks when call logs contain a record from a certain phone number.");	
+//								if (fieldName.replace("\"", "").equals("logs"))
+//									System.out.println("The app checks when call logs contain a record from a certain phone number.");	
 								break;
 								
 							case "MessageEvent":
-								if (fieldName.replace("\"", "").equals("sender")) {
+								if (functionName.equals("getMessagePhones")) {
 									if (comparator.replace("\"", "").equals("from")) 
-										System.out.println("The app checks when sender is from a certain phone number.");
-									else
-										System.out.println("The app checks when sender is in a list.");
+										System.out.println("The app checks sender when it is from a certain phone number.");
+									else {
+										if (comparator.replace("\"", "").equals("in")) 
+											System.out.println("The app checks sender when it is in a list.");
+										else 
+											System.out.println("The app checks new messages arriving.");
+									}
 								}
 								
-								if (fieldName.replace("\"", "").equals("messages"))
-									System.out.println("The app checks when new messages arrive.");
-								
-								if (fieldName.replace("\"", "").equals("messageLists"))
-									System.out.println("The app checks when text messages are updated.");
+								if (functionName.equals("getMessageContent")) 
+									System.out.println("The app checks message content when they are updated.");
 								
 								break;
 								
 							case "ImageEvent":
-								if (fieldName.replace("\"", "").equals("mediaLibrary"))
-									System.out.println("The app checks when media library is updated.");
-								
-								if (fieldName.replace("\"", "").equals("fileOrFolder"))
-									System.out.println("The app checks when the file or folder content is updated.");
-								
-								if (fieldName.replace("\"", "").equals("images"))
-									System.out.println("The app checks when the image has a human face.");
-								
+								if (path != null) 
+									System.out.println("The app checks file or folder content when they are updated.");
+								else 
+									System.out.println("The app checks images when they are updated.");
+				
 								break;
+								
 							default:
 								System.out.println("No matchable event type, please check it.");
 						}
@@ -687,6 +696,7 @@ public class ApkAnalyzer extends DERGFrontend {
 						optimizationConstraints.clear();
 						eventType = null;
 						fieldName = null;
+						functionName = null;
 						comparator = null;
 						threshold = null; 
 						latitude = null;
@@ -706,6 +716,9 @@ public class ApkAnalyzer extends DERGFrontend {
 					
 				case "EventType":
 					eventType = argsNameValue.get(i).get(1);
+					break;
+				case "BuiltInFunction":
+					functionName = argsNameValue.get(i).get(1);
 					break;
 				case "setField":
 					fieldName = argsNameValue.get(i).get(1);
